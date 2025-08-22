@@ -21,9 +21,12 @@ produits = [
     ("Lotion nettoyante Bioderma", "Soin du visage", 78.000),
     ("Savon d'Alep bio", "Hygiène", 18.000),
     ("Gel anti-douleur musculaire", "Santé", 40.000),
-    ("croquette ships chat","croquette-chat",6.000), 
-    ("croquette chien","croquette_chien",6.000),
+    ("croquette ships chat","croquette",6.000), 
+    ("croquette chien","croquette",6.000),
     ("litiere chat cats ways","litiere",12.000),
+    ("litiere naturel","litiere",10.000),
+    
+
 
 ]
 
