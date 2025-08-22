@@ -1,0 +1,3 @@
+[runner]
+# Forcer l'utilisation de pip au lieu de uv
+pip_installer = true
