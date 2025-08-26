@@ -17,6 +17,30 @@ def load_data():
 
 df = load_data()
 
+# ---AI3 Simuler le stock actuel (unités disponibles) ---
+stock_initial = {
+    "Crème hydratante NUXE": 120,
+    "Shampoing sec Klorane": 85,
+    "Sérum anti-âge La Roche-Posay": 60,
+    "Gel douche doux Uriage": 100,
+    "Patchs yeux Bio": 90,
+    "Brumisateur d'eau thermale": 75,
+    "Crème mains nourrissante": 110,
+    "Déodorant sans alcool": 95,
+    "Complément alimentaire sommeil": 70,
+    "Masque capillaire nourrissant": 80,
+    "Lotion nettoyante Bioderma": 65,
+    "Huile d'argan marocaine": 50,
+    "Savon d'Alep bio": 3,  # Stock très bas
+    "Gel anti-douleur musculaire": 30,
+    "Dentifrice Sensigel": 10
+}
+
+
+
+
+
+
 # --- Filtres dans la barre latérale ---
 st.sidebar.header("🔍 Filtres")
 min_date = df['date'].min().date()
@@ -159,3 +183,48 @@ recommendations = support.drop(selected_product).sort_values(ascending=False).he
 st.write(f"👉 Les clients qui ont acheté **{selected_product}** ont aussi souvent acheté :")
 for i, (prod, score) in enumerate(recommendations.items(), 1):
     st.write(f"{i}. **{prod}** (taux d'association : {score:.1%})")
+
+
+
+
+#AI3 
+# --- ⚠️ DÉTECTION DES RISQUES DE RUPTURE (IA légère) ---
+st.subheader("⚠️ Surveillance des stocks")
+# Calculer la vitesse de vente moyenne par jour (sur les 30 derniers jours)
+ventes_par_produit = filtered.groupby('produit')['quantite'].sum()
+duree_analysee = (filtered['date'].max() - filtered['date'].min()).days
+if duree_analysee == 0:
+    duree_analysee = 1  # Éviter la division par zéro
+
+vitesse_vente = ventes_par_produit / duree_analysee  # unités/jour
+
+# Liste pour stocker les alertes
+alertes = []
+
+# Vérifier chaque produit
+for produit, stock in stock_initial.items():
+    if produit in vitesse_vente and vitesse_vente[produit] > 0:
+        jours_restants = stock / vitesse_vente[produit]  # jours avant rupture
+        if jours_restants < 7:
+            alertes.append({
+                "Produit": produit,
+                "Stock actuel": stock,
+                "Vitesse de vente (unités/jour)": round(vitesse_vente[produit], 2),
+                "Jours restants": round(jours_restants, 1)
+            })
+
+# Afficher les alertes
+if alertes:
+    st.write("🚨 **Produits en risque de rupture dans les 7 prochains jours :**")
+    df_alertes = pd.DataFrame(alertes)
+    st.dataframe(df_alertes.style.highlight_between(subset=["Jours restants"], left=0, right=3, color="pink")
+                           .highlight_between(subset=["Jours restants"], left=3, right=7, color="yellow"))
+else:
+    st.success("✅ Aucun risque de rupture de stock détecté.")
+
+# Option : afficher tous les produits
+if st.checkbox("Afficher toutes les vitesses de vente"):
+    st.write("📊 Vitesse de vente par produit (unités/jour) :")
+    df_ventes = pd.DataFrame(vitesse_vente).reset_index()
+    df_ventes.columns = ['Produit', 'Vitesse de vente (unités/jour)']
+    st.dataframe(df_ventes)
