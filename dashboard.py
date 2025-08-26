@@ -228,3 +228,65 @@ if st.checkbox("Afficher toutes les vitesses de vente"):
     df_ventes = pd.DataFrame(vitesse_vente).reset_index()
     df_ventes.columns = ['Produit', 'Vitesse de vente (unités/jour)']
     st.dataframe(df_ventes)
+
+
+
+
+
+
+
+    # --- 📊 IA 4 : DÉTECTION DES PRODUITS PHARES ET SOUS-PERFORMANTS ---
+st.subheader("🔍 Analyse de performance des produits")
+
+# Calculer le CA et la quantité vendue par produit
+perf = filtered.groupby('produit').agg({
+    'ca': 'sum',
+    'quantite': 'sum'
+}).reset_index()
+
+# Calculer le CA moyen par produit
+ca_moyen = perf['ca'].mean()
+quantite_moyenne = perf['quantite'].mean()
+
+# Catégoriser les produits
+perf['statut'] = 'Normal'
+perf.loc[perf['ca'] > 2 * ca_moyen, 'statut'] = 'Phare'           # Très bon CA
+perf.loc[perf['ca'] < 0.5 * ca_moyen, 'statut'] = 'Sous-performant'  # Faible CA
+
+# Séparer les catégories
+phare = perf[perf['statut'] == 'Phare']
+sous_perf = perf[perf['statut'] == 'Sous-performant']
+
+# Afficher les résultats
+if len(phare) > 0:
+    st.success("🌟 **Produits phares (haut rendement)** :")
+    st.dataframe(phare[['produit', 'ca', 'quantite']].rename(columns={
+        'produit': 'Produit',
+        'ca': 'CA (TND)',
+        'quantite': 'Quantité vendue'
+    }))
+else:
+    st.info("Aucun produit classé comme 'phare' (seuil : 2x CA moyen).")
+
+if len(sous_perf) > 0:
+    st.warning("📉 **Produits sous-performants (faible vente)** :")
+    st.dataframe(sous_perf[['produit', 'ca', 'quantite']].rename(columns={
+        'produit': 'Produit',
+        'ca': 'CA (TND)',
+        'quantite': 'Quantité vendue'
+    }))
+else:
+    st.info("Aucun produit classé comme 'sous-performant' (seuil : < 50% du CA moyen).")
+
+# Graphique : comparaison CA par produit
+fig_perf = px.bar(
+    perf,
+    x='ca',
+    y='produit',
+    color='statut',
+    orientation='h',
+    title="Performance des produits (CA)",
+    labels={'ca': 'Chiffre d\'affaires (TND)', 'produit': 'Produit'},
+    color_discrete_map={'Phare': 'green', 'Normal': 'blue', 'Sous-performant': 'red'}
+)
+st.plotly_chart(fig_perf, use_container_width=True)
